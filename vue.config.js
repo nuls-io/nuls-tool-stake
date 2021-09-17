@@ -3,6 +3,8 @@ const productionGzipExtensions = ['js', 'css'];
 const shell = require("shelljs");
 shell.cp(process.cwd() + "/config/" + process.env.NULS_ENV + ".js",process.cwd() + "/src/config.js");
 const isProduction = process.env.NODE_ENV === 'production';
+// const BundleAnalyzerPlugin = require("webpack-bundle-analyzer")
+//   .BundleAnalyzerPlugin;
 module.exports = {
   pluginOptions: {
     i18n: {
@@ -20,16 +22,17 @@ module.exports = {
         threshold: 10240,
         minRatio: 0.8
       }));
+      // config.plugins.push(new BundleAnalyzerPlugin())
 
     }
-    config.externals = {
-      'vue': 'Vue',
-      'vue-router': 'VueRouter',
-      /*'vuex': 'Vuex',*/
-      'moment': 'moment',
-      'echarts': 'echarts',
-      'element-ui': 'ELEMENT',
-    }
+    // config.externals = {
+    //   'vue': 'Vue',
+    //   'vue-router': 'VueRouter',
+    //   /*'vuex': 'Vuex',*/
+    //   'moment': 'moment',
+    //   'echarts': 'echarts',
+    //   'element-ui': 'ELEMENT',
+    // }
   },
   baseUrl: undefined,
   outputDir: undefined,

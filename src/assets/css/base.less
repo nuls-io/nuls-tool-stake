@@ -16,7 +16,7 @@ html {
 body, div, dl, dt, dd, ul, ol, li, p, h1, h2, h3, h4, h5, h6, pre, form, fieldset, input, textarea {
   margin: 0;
   padding: 0;
-  font-family: @fontF, sans-serif;
+  font-family: Helvetica,Arial,sans-serif;
   color: @Fcolour;
   font-weight: 400
 }
@@ -322,3 +322,82 @@ u {
   }
 }
 
+.font_12 {
+  font-size: 12px;
+}
+
+.el-form {
+  .el-form-item__label {
+    line-height: 20px !important;
+  }
+  .form-bnt {
+    margin: 40px 0 0 0;
+    text-align: center;
+    .el-button {
+      width: 360px;
+    }
+  }
+}
+
+.el-dialog {
+  background-color: @Bcolour2 !important;
+  .el-dialog__header {
+    //border-bottom: @BD1;
+    .el-dialog__headerbtn {
+      top: 0;
+      right: 0;
+      height: 30px;
+      width: 30px;
+      border-radius: 15px;
+      .el-icon-close {
+        font-size: 20px;
+      }
+    }
+  }
+  .el-dialog__body {
+    padding: 30px 20px 0 20px;
+    span {
+      font-size: 14px;
+    }
+    p {
+      margin: 20px auto;
+      min-height: 80px;
+      width: 100%;
+      word-wrap: break-word;
+      padding: 10px;
+    }
+
+    .upload {
+      min-height: 100px;
+      text-align: center;
+      .upload-tips {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .upload-percent {
+        width: 80%;
+        margin: 0 0 20px 10%;
+      }
+      .upload-bt {
+        .el-button--info {
+          padding: 10px;
+          width: 150px;
+          margin-bottom: 20px;
+        }
+      }
+    }
+  }
+  .el-dialog__footer {
+    text-align: center;
+    .el-button--success {
+      width: 400px;
+    }
+  }
+
+}
+
+.btn-next {
+  .el-button {
+    width: 320px;
+  }
+}

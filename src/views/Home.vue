@@ -2,24 +2,43 @@
     <div class="home">
         <div class="all">
             <div class="top">
-                <div class="danwei">{{$t('home.home0')}}: NULS</div>
-                <div class="alls">
-                    <h3>{{$t('home.home1')}}</h3>
-                    <p>{{consensusTotal}}</p>
-                </div>
+              <div class="left">
+                <h3>{{$t('home.home1')}}(NULS)</h3>
+                <p>{{consensusTotal}}</p>
+              </div>
+              <div class="right">
+                <h3>APR</h3>
+                <p>{{apr}}%</p>
+              </div>
+<!--                <div class="alls">-->
+<!--                    <h3>{{$t('home.home1')}}</h3>-->
+<!--                    <p>{{consensusTotal}}</p>-->
+<!--                </div>-->
             </div>
             <ul class="list cb">
                 <li>
                     <h6>{{consensusInfo.lastDayReward}}</h6>
-                    <p>{{$t('home.home2')}}</p>
+                    <p>
+                      {{$t('home.home2')}}
+                      <br>
+                      <span class="font_12">(NULS)</span>
+                    </p>
                 </li>
                 <li>
                     <h6>{{consensusInfo.totalReward}}</h6>
-                    <p>{{$t('home.home3')}}</p>
+                  <p>
+                    {{$t('home.home3')}}
+                    <br>
+                    <span class="font_12">(NULS)</span>
+                  </p>
                 </li>
                 <li>
                     <h6>{{consensusInfo.consensusLock}}</h6>
-                    <p>{{$t('home.home4')}}</p>
+                  <p>
+                    {{$t('home.home4')}}
+                    <br>
+                    <span class="font_12">(NULS)</span>
+                  </p>
                 </li>
             </ul>
         </div>
@@ -44,8 +63,9 @@
             </div>
             <el-form :model="joinForm" status-icon :rules="joinRules" ref="joinForm" class="join-form">
                 <el-form-item label="" prop="stakingValue" ref="stakingValue">
-                    <div class="max" @click="max">{{$t('home.home11')}}</div>
+<!--                    <div class="max" @click="max">{{$t('home.home11')}}</div>-->
                     <el-input :placeholder="$t('home.home12')" v-model="joinForm.stakingValue" class="staking-value">
+                      <el-button slot="append" @click="max">{{$t('home.home11')}}</el-button>
                     </el-input>
                 </el-form-item>
                 <el-form-item>
@@ -83,7 +103,7 @@
 
 <script>
   import {EXPLORER_URL, RUN_DEV} from '@/config'
-  import moment from 'moment'
+  import dayjs from 'dayjs'
   import {
     Minus,
     divisionDecimals,
@@ -146,6 +166,7 @@
 
         outDialog: false,//退出弹框
         outStakingInfo: {},//退出staking信息
+        apr: "", // 年化率
 
       };
     },
@@ -155,8 +176,10 @@
     mounted() {
 
       setInterval(() => {
-        this.getAddressInfoByNode(this.$store.state.accountInfo);
-        this.getConsensusInfoByAddress(1, 500, this.$store.state.accountInfo.address);
+        if (this.$store.state.accountInfo.address) {
+          this.getAddressInfoByNode(this.$store.state.accountInfo);
+          this.getConsensusInfoByAddress(1, 500, this.$store.state.accountInfo.address);
+        }
       }, 11000)
 
     },
@@ -179,10 +202,11 @@
       init() {
         this.getCoinInfo();
         this.getConsensusNodes();
-        if (this.$store.state.accountInfo.address) {
-          this.getAddressInfoByNode(this.$store.state.accountInfo);
-          this.getConsensusInfoByAddress(1, 500, this.$store.state.accountInfo.address);
-        }
+        this.getAnnulizedRewardStatistical()
+        // if (this.$store.state.accountInfo.address) {
+        //   this.getAddressInfoByNode(this.$store.state.accountInfo);
+        //   this.getConsensusInfoByAddress(1, 500, this.$store.state.accountInfo.address);
+        // }
       },
 
       superLongs(string, leng) {
@@ -237,6 +261,23 @@
           });
       },
 
+      // 获取年化收益率list
+      getAnnulizedRewardStatistical() {
+        this.$post('/', 'getAnnulizedRewardStatistical', [3])
+            .then((response) => {
+              //console.log(response);
+              if (response.hasOwnProperty("result")) {
+                const aprList = response.result;
+                if (aprList.length) {
+                  this.apr = aprList[aprList.length - 1].value
+                }
+                // console.log(response.result);
+              }
+            })
+            .catch((error) => {
+              console.log("getAnnulizedRewardStatistical:" + error);
+            });
+      },
       /**
        * 搜索
        * */
@@ -247,7 +288,12 @@
 
       //最大
       max() {
-        this.joinForm.stakingValue = Minus(this.balance.toString(), 0.001).toString()
+        if (Number(this.balance)){
+          this.joinForm.stakingValue = Minus(this.balance.toString(), 0.001).toString()
+        } else {
+          this.joinForm.stakingValue = 0;
+        }
+
       },
 
       /**
@@ -309,7 +355,7 @@
               for (let itme of response.result.list) {
                 itme.amount = divisionDecimals(itme.amount);
                 itme.fee = divisionDecimals(itme.fee);
-                itme.createTime = moment(getLocalTime(itme.createTime * 1000)).format('YYYY/MM/DD HH:mm:ss');
+                itme.createTime = dayjs(getLocalTime(itme.createTime * 1000)).format('YYYY/MM/DD HH:mm:ss');
               }
               this.oldData = [...this.oldData, ...response.result.list];
               this.oldData = arrDistinctByProp(this.oldData, "txHash");
@@ -337,12 +383,24 @@
               depositValue: this.joinForm.stakingValue,
               agentHash: this.nodeInfo.txHash
             };
-            const resData = await window.nabox.sendDepositTransaction(data);
-            console.log(resData);
-            if (resData) {
-              this.joinForm.stakingValue = '';
-              this.$refs['stakingValue'].resetField()
+            try {
+              const resData = await window.nabox.sendDepositTransaction(data);
+              console.log(resData);
+              if (resData) {
+                this.$message({
+                  type: "success",
+                  message: this.$t("tips.tips10")
+                })
+                this.joinForm.stakingValue = '';
+                this.$refs['stakingValue'].resetField()
+              }
+            } catch (e) {
+              this.$message({
+                type: "error",
+                message: e.message || JSON.stringify(e)
+              })
             }
+
           } else {
             return false;
           }
@@ -363,15 +421,28 @@
           withdrawAmount: this.outStakingInfo.amount,
           depositHash: this.outStakingInfo.txHash
         };
-        const resData = await window.nabox.sendWithDrawTransaction(data);
-        //console.log(resData);
-        if (resData) {
+        try {
+          const resData = await window.nabox.sendWithDrawTransaction(data);
+          //console.log(resData);
+          if (resData) {
+            this.outDialog = false;
+            this.outStakingInfo = {};
+            this.$message({
+              type: "success",
+              message: this.$t("tips.tips10")
+            })
+            setTimeout(() => {
+              this.oldData = [];
+            }, 20000)
+          }
+        } catch (e) {
           this.outDialog = false;
-          this.outStakingInfo = {};
-          setTimeout(() => {
-            this.oldData = [];
-          }, 20000)
+          this.$message({
+            type: "error",
+            message: e.message || JSON.stringify(e)
+          })
         }
+
       },
 
       /**
@@ -396,16 +467,33 @@
     .home {
         .all {
             margin: 10px;
+            padding: 10px;
             border-radius: 5px;
             background-color: #f1f1f1;
             height: 170px;
             .top {
-                .danwei {
-                    font-size: 12px;
-                    margin: 0 0 0 10px;
-                    padding: 10px 0 0 0;
-                    float: left;
+              display: flex;
+              align-items: center;
+              height: 80px;
+              border-bottom: 1px solid #DCDFE6;
+              //padding: 10px 0;
+                .left,.right {
+                  flex: 1;
+                  text-align: center;
+                  padding: 10px 0;
+                  h3 {
+                    font-size: 16px;
+                    //padding: 10px 80px 0 0;
+                  }
+                  p {
+                    font-size: 16px;
+                    font-weight: 600;
+                    margin: 10px 0 0 0;
+                  }
                 }
+              .left {
+                border-right: 1px solid #DCDFE6;
+              }
                 .alls {
                     text-align: center;
                     h3 {
@@ -419,14 +507,14 @@
                 }
             }
             .list {
-                margin: 30px 0 0 0;
+                margin-top: 10px;
                 li {
                     float: left;
                     width: 33.33%;
                     text-align: center;
                     h6 {
-                        font-size: 16px;
-                        line-height: 40px;
+                        font-size: 14px;
+                        line-height: 24px;
                     }
                     p {
                         font-size: 14px;
@@ -436,7 +524,7 @@
         }
         .node {
             margin: 20px 10px;
-            padding: 20px 10px 40px;
+            padding: 20px 10px 20px;
             border-radius: 5px;
             background-color: #f1f1f1;
             .search {
@@ -453,7 +541,7 @@
                 }
             }
             .available {
-                margin: 40px 0 0 0;
+                margin: 20px 0 0 0;
                 font-size: 14px;
             }
             .staking-value {
@@ -471,7 +559,7 @@
             }
             .pledge {
                 width: 100%;
-                margin: 20px 0 0 0;
+                //margin: 20px 0 0 0;
             }
         }
         .pledgeing {

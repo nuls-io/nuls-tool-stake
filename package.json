@@ -14,7 +14,8 @@
     "compression-webpack-plugin": "^3.0.0",
     "copy-to-clipboard": "^3.1.0",
     "cross-env": "^6.0.3",
-    "element-ui": "^2.4.5",
+    "dayjs": "^1.10.7",
+    "element-ui": "^2.15.6",
     "file-saver": "^2.0.2",
     "nuls-sdk-js": "^2.2.7",
     "shelljs": "^0.8.3",
@@ -28,6 +29,7 @@
     "@vue/cli-plugin-eslint": "^3.8.0",
     "@vue/cli-service": "^3.8.0",
     "babel-eslint": "^10.0.1",
+    "babel-plugin-component": "^1.1.1",
     "eslint": "^5.16.0",
     "eslint-plugin-vue": "^5.0.0",
     "less": "^3.9.0",
@@ -45,7 +47,8 @@
       "eslint:recommended"
     ],
     "rules": {
-      "no-console": "off"
+      "no-console": "off",
+      "no-unused-vars": "off"
     },
     "parserOptions": {
       "parser": "babel-eslint"

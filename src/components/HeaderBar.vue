@@ -91,9 +91,9 @@
       //断开连接钱包
       async offLink(address) {
         this.accountDialog = false;
-        let resData = await window.nabox.offLink({address: address, chain: RUN_DEV ? 'tNULS' : "NULS"});
-        console.log(resData);
         this.$store.commit("changeAccount", {address: ""});
+        // let resData = await window.nabox.offLink({address: address, chain: RUN_DEV ? 'tNULS' : "NULS"});
+        // console.log(resData);
       },
 
       //连接nabox 并获取地址信息
@@ -232,12 +232,12 @@
                         padding: 10px 5px;
                         border-radius: 5px;
                         background-color: #f1f1f1;
-                        margin: 0 0 20px 0;
+                        margin: 0 0 15px 0;
                         font-size: 13px;
                     }
                     .btns {
                         text-align: center;
-                        padding: 0 0 20px 0;
+                        padding: 0 0 15px 0;
                         .el-button {
                             width: 100px;
                             .span {
