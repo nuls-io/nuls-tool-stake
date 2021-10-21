@@ -34,13 +34,13 @@
       return {
         logoSvg: RUN_DEV ? logo : logoBeta,
         accountInfo: {},//账户信息
-        lang: 'en',
+        lang: localStorage.getItem('lang') || 'en',
         accountDialog: false
       };
     },
     components: {},
     created() {
-      this.selectLanguage();
+      // this.selectLanguage();
     },
     mounted() {
       setTimeout(() => {
@@ -167,7 +167,8 @@
        */
       selectLanguage() {
         this.lang = this.lang === 'en' ? 'cn' : 'en';
-        sessionStorage.setItem('lang', this.lang);
+        localStorage.setItem('lang', this.lang);
+        console.log(this.lang, 366)
         this.$i18n.locale = this.lang;
       },
 
