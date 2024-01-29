@@ -10,7 +10,7 @@
                 </div>
                 <div v-else class="click" @click="connectTo('nabox')">{{$t('header.header0')}}</div>
             </div>
-            <div class="fr clicks language" @click="selectLanguage">{{lang !=='en' ? 'EN':'中文'}}</div>
+            <div class="fr clicks language" @click="selectLanguage">{{lang !=='en' ? 'En':'Zh'}}</div>
         </div>
         <el-dialog title="" :visible.sync="accountDialog" width="350px" class="account-dialog">
             <div class="address">{{$store.state.accountInfo.address}}</div>

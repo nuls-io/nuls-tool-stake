@@ -4,20 +4,16 @@
             <div class="top">
               <div class="left">
                 <h3>{{$t('home.home1')}}(NULS)</h3>
-                <p>{{consensusTotal}}</p>
+                <p>{{$toThousands(consensusTotal)}}</p>
               </div>
               <div class="right">
                 <h3>APR</h3>
                 <p>{{apr}}%</p>
               </div>
-<!--                <div class="alls">-->
-<!--                    <h3>{{$t('home.home1')}}</h3>-->
-<!--                    <p>{{consensusTotal}}</p>-->
-<!--                </div>-->
             </div>
             <ul class="list cb">
                 <li>
-                    <h6>{{consensusInfo.lastDayReward}}</h6>
+                    <h6>{{$toThousands(consensusInfo.lastDayReward)}}</h6>
                     <p>
                       {{$t('home.home2')}}
                       <br>
@@ -25,7 +21,7 @@
                     </p>
                 </li>
                 <li>
-                    <h6>{{consensusInfo.totalReward}}</h6>
+                    <h6>{{$toThousands(consensusInfo.totalReward)}}</h6>
                   <p>
                     {{$t('home.home3')}}
                     <br>
@@ -33,7 +29,7 @@
                   </p>
                 </li>
                 <li>
-                    <h6>{{consensusInfo.consensusLock}}</h6>
+                    <h6>{{$toThousands(consensusInfo.consensusLock)}}</h6>
                   <p>
                     {{$t('home.home4')}}
                     <br>
@@ -53,13 +49,13 @@
             </el-select>
             <ul>
                 <li>{{$t('home.home6')}}<span class="fr">{{nodeInfo.creditValue}}</span></li>
-                <li>{{$t('home.home7')}}<span class="fr">{{nodeInfo.totalDeposit}} NULS</span></li>
-                <li>{{$t('home.home8')}}<span class="fr">{{nodeInfo.remaining}} NULS</span></li>
+                <li>{{$t('home.home7')}}<span class="fr">{{$toThousands(nodeInfo.totalDeposit)}} NULS</span></li>
+                <li>{{$t('home.home8')}}<span class="fr">{{$toThousands(nodeInfo.remaining)}} NULS</span></li>
                 <li>{{$t('home.home9')}}<span class="fr">{{nodeInfo.commissionRate}}%</span></li>
             </ul>
 
             <div class="fr available">
-                {{$t('home.home10')}}: {{balance}} NULS
+                {{$t('home.home10')}}: {{$toThousands(balance)}} NULS
             </div>
             <el-form :model="joinForm" status-icon :rules="joinRules" ref="joinForm" class="join-form">
                 <el-form-item label="" prop="stakingValue" ref="stakingValue">
@@ -80,7 +76,7 @@
             <h5>{{$t('home.home14')}}</h5>
             <div class="lis" v-for="(item,index) in nodeDepositData" :key="index">
                 <div class="fl">
-                    <div class="top">{{item.amount}} NULS <span>{{item.createTime}}</span></div>
+                    <div class="top">{{$toThousands(item.amount)}} NULS <span>{{item.createTime}}</span></div>
                     <div class="tx">TXID: <span @click="toUrl(item.txHash,'url')" class="click">{{superLongs(item.txHash,10)}}</span>
                     </div>
                 </div>
@@ -95,7 +91,7 @@
             <div class="tips">{{$t('home.home17')}}{{outStakingInfo.amount}} NULS</div>
             <div class="btns">
                 <el-button type="primary" @click="outDialog=false">{{$t('public.cancel')}}</el-button>
-                <el-button type="primary" @click="out">{{$t('public.exit')}}</el-button>
+                <el-button type="primary" @click="out">{{$t('public.confirm')}}</el-button>
             </div>
         </el-dialog>
     </div>
@@ -107,11 +103,11 @@
   import {
     Minus,
     divisionDecimals,
-    formatNum,
+    divisionAndFix,
     getLocalTime,
     superLong,
     arrDistinctByProp,
-    tofix
+    fixNumber
   } from '@/api/util'
 
   export default {
@@ -220,8 +216,7 @@
         this.$post('/', 'getCoinInfo', [])
           .then((response) => {
             if (response.hasOwnProperty("result")) {
-              let consensusTotal = divisionDecimals(response.result.consensusTotal);
-              this.consensusTotal = formatNum(Number(consensusTotal));
+              this.consensusTotal = divisionAndFix(response.result.consensusTotal, 8, 0);
             } else {
               this.consensusTotal = 0;
             }
@@ -244,11 +239,11 @@
             if (response.hasOwnProperty("result")) {
               for (let itme of response.result.list) {
                 itme.bozhengjin = itme.deposit;
-                itme.deposit = Number(divisionDecimals(itme.deposit)).toFixed(3);
-                itme.agentReward = Number(divisionDecimals(itme.agentReward)).toFixed(3);
-                itme.totalDeposit = Number(divisionDecimals(itme.totalDeposit)).toFixed(3);
-                itme.remaining = Number(Minus(500000, itme.totalDeposit)).toFixed(3);
-                itme.totalReward = Number(divisionDecimals(itme.totalReward)).toFixed(3);
+                itme.deposit = divisionAndFix(itme.deposit, 8, 3);
+                itme.agentReward = divisionAndFix(itme.agentReward, 8, 3);
+                itme.totalDeposit = divisionAndFix(itme.totalDeposit, 8, 3);
+                itme.remaining = fixNumber(Minus(500000, itme.totalDeposit), 3);
+                itme.totalReward = divisionAndFix(itme.totalReward, 8, 3);
               }
               this.allNodeData = response.result.list;
               this.nodeInfo = this.allNodeData[0];
@@ -305,10 +300,10 @@
           .then((response) => {
             //console.log(response);
             if (response.hasOwnProperty("result")) {
-              this.consensusInfo.lastDayReward = tofix(divisionDecimals(Minus(response.result.totalReward, response.result.lastDayReward)), 3, -1);
-              this.consensusInfo.totalReward = tofix(divisionDecimals(response.result.totalReward), 3, -1);
-              this.consensusInfo.consensusLock = tofix(divisionDecimals(response.result.consensusLock), 3, -1);
-              this.balance = tofix(divisionDecimals(response.result.balance), 3, -1);
+              this.consensusInfo.lastDayReward = divisionAndFix(Minus(response.result.totalReward, response.result.lastDayReward), 8, 3);
+              this.consensusInfo.totalReward = divisionAndFix(response.result.totalReward, 8, 3);
+              this.consensusInfo.consensusLock = divisionAndFix(response.result.consensusLock, 8, 3);
+              this.balance = divisionAndFix(response.result.balance, 8, 3);
             }
           })
           .catch((error) => {

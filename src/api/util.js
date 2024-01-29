@@ -283,3 +283,26 @@ export function tofix(val, len, side) {
     return Number(val).toFixed(len)
   }
 }
+
+export function toThousands(num) {
+  if (!num) return num;
+  const N = num.toString().split('.');
+  const int = N[0];
+  const float = N[1] ? '.' + N[1] : '';
+  return int.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') + float;
+}
+
+export function divisionAndFix(nu, decimals = 8, fix = 6) {
+  if (!nu) return '0';
+  const str = new BigNumber(Division(nu, Power(decimals))).toFixed(fix, 1);
+  return fixNumber(str, fix);
+}
+
+export function fixNumber(str, fix = 8) {
+  str = '' + str;
+  const int = str.split('.')[0];
+  let float = str.split('.')[1];
+  if (!float || !Number(float)) return int;
+  float = float.slice(0, fix).replace(/(0+)$/g, '');
+  return Number(float) ? int + '.' + float : int;
+}
