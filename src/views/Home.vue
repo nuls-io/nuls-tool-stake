@@ -300,7 +300,8 @@
           .then((response) => {
             //console.log(response);
             if (response.hasOwnProperty("result")) {
-              this.consensusInfo.lastDayReward = divisionAndFix(Minus(response.result.totalReward, response.result.lastDayReward), 8, 3);
+              // this.consensusInfo.lastDayReward = divisionAndFix(Minus(response.result.totalReward, response.result.lastDayReward), 8, 3);
+              this.consensusInfo.lastDayReward = divisionAndFix(response.result.lastReward, 8, 3);
               this.consensusInfo.totalReward = divisionAndFix(response.result.totalReward, 8, 3);
               this.consensusInfo.consensusLock = divisionAndFix(response.result.consensusLock, 8, 3);
               this.balance = divisionAndFix(response.result.balance, 8, 3);
