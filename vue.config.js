@@ -55,7 +55,7 @@ module.exports = {
     open: true, //配置自动启动浏览器
     proxy: {// 配置跨域处理
       '/api': {
-        target: 'http://192.168.1.127:8080/',
+        target: 'https://beta.public1.nuls.io',
         changeOrigin: true,  // 是否跨域
         pathRewrite: {
           '^/api': '/'

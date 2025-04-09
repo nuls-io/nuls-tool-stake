@@ -13,8 +13,8 @@ export const API_CHAIN_ID = 2;
 //链前缀
 export const API_PREFIX = 'tNULS';
 //正式、测试网络的api
-export let API_URL = 'http://beta.public1.nuls.io/';
+export let API_URL = 'https://beta.public1.nuls.io/';
 //请求最迟时间
 export const API_TIME = '6000';
 //浏览器连接地址
-export const EXPLORER_URL = 'http://beta.nulscan.io/';
+export const EXPLORER_URL = 'https://beta.nulscan.io/';

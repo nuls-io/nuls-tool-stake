@@ -3,7 +3,7 @@
         <div class="all">
             <div class="top">
               <div class="left">
-                <h3>{{$t('home.home1')}}(NULS)</h3>
+                <h3>{{$t('home.home1')}}({{ symbol }})</h3>
                 <p>{{$toThousands(consensusTotal)}}</p>
               </div>
               <div class="right">
@@ -17,7 +17,7 @@
                     <p>
                       {{$t('home.home2')}}
                       <br>
-                      <span class="font_12">(NULS)</span>
+                      <span class="font_12">({{ symbol }})</span>
                     </p>
                 </li>
                 <li>
@@ -25,7 +25,7 @@
                   <p>
                     {{$t('home.home3')}}
                     <br>
-                    <span class="font_12">(NULS)</span>
+                    <span class="font_12">({{ symbol }})</span>
                   </p>
                 </li>
                 <li>
@@ -33,7 +33,7 @@
                   <p>
                     {{$t('home.home4')}}
                     <br>
-                    <span class="font_12">(NULS)</span>
+                    <span class="font_12">({{ symbol }})</span>
                   </p>
                 </li>
             </ul>
@@ -49,13 +49,13 @@
             </el-select>
             <ul>
                 <li>{{$t('home.home6')}}<span class="fr">{{nodeInfo.creditValue}}</span></li>
-                <li>{{$t('home.home7')}}<span class="fr">{{$toThousands(nodeInfo.totalDeposit)}} NULS</span></li>
-                <li>{{$t('home.home8')}}<span class="fr">{{$toThousands(nodeInfo.remaining)}} NULS</span></li>
+                <li>{{$t('home.home7')}}<span class="fr">{{$toThousands(nodeInfo.totalDeposit)}} {{ symbol }}</span></li>
+                <li>{{$t('home.home8')}}<span class="fr">{{$toThousands(nodeInfo.remaining)}} {{ symbol }}</span></li>
                 <li>{{$t('home.home9')}}<span class="fr">{{nodeInfo.commissionRate}}%</span></li>
             </ul>
 
             <div class="fr available">
-                {{$t('home.home10')}}: {{$toThousands(balance)}} NULS
+                {{$t('home.home10')}}: {{$toThousands(balance)}} {{ symbol }}
             </div>
             <el-form :model="joinForm" status-icon :rules="joinRules" ref="joinForm" class="join-form">
                 <el-form-item label="" prop="stakingValue" ref="stakingValue">
@@ -76,7 +76,7 @@
             <h5>{{$t('home.home14')}}</h5>
             <div class="lis" v-for="(item,index) in nodeDepositData" :key="index">
                 <div class="fl">
-                    <div class="top">{{$toThousands(item.amount)}} NULS <span>{{item.createTime}}</span></div>
+                    <div class="top">{{$toThousands(item.amount)}} {{ symbol }} <span>{{item.createTime}}</span></div>
                     <div class="tx">TXID: <span @click="toUrl(item.txHash,'url')" class="click">{{superLongs(item.txHash,10)}}</span>
                     </div>
                 </div>
@@ -88,7 +88,7 @@
         </div>
 
         <el-dialog :title="$t('home.home16')" :visible.sync="outDialog" width="350px" class="outDialog">
-            <div class="tips">{{$t('home.home17')}}{{outStakingInfo.amount}} NULS</div>
+            <div class="tips">{{$t('home.home17')}}{{ $toThousands(outStakingInfo.amount) }} {{ symbol }}</div>
             <div class="btns">
                 <el-button type="primary" @click="outDialog=false">{{$t('public.cancel')}}</el-button>
                 <el-button type="primary" @click="out">{{$t('public.confirm')}}</el-button>
@@ -107,33 +107,38 @@
     getLocalTime,
     superLong,
     arrDistinctByProp,
-    fixNumber
+    fixNumber,
+    toThousands
   } from '@/api/util'
+  import { NSymbol, NDecimals, Max_Deposit, Min_Deposit, DEFAULT_FEE } from '@/constants/constants'
+import { timesDecimals } from '../api/util'
 
+  const min_deposit = divisionDecimals(Min_Deposit, NDecimals)
+  const max_deposit = divisionDecimals(Max_Deposit, NDecimals)
   export default {
     data() {
 
       let checkStakingValue = (rule, value, callback) => {
-        let usable = Number(Minus(500000, Number(this.nodeInfo.totalDeposit)));
-        let balance = Number(Minus(this.balance, Number(value)));
+        let usable = Minus(max_deposit, this.nodeInfo.totalDeposit).toFixed();
         let re = /^\d+(?=\.{0,1}\d+$|$)/;
-        let res = /^\d{1,8}(\.\d{1,8})?$/;
+        let res = /^\d{1,12}(\.\d{1,4})?$/;
         if (!value) {
           return callback(new Error(this.$t('tips.tips0')));
         } else if (!re.exec(value) || !res.exec(value)) {
           callback(new Error(this.$t('tips.tips1')))
-        } else if (value < 2000) {
-          return callback(new Error(this.$t('tips.tips5')));
-        } else if (value > usable) {
-          return callback(new Error(this.$t('tips.tips3') + usable + this.$t('tips.tips4')));
-        } else if (balance < 0.001) {
-          return callback(new Error(this.$t('tips.tips6') + this.balance));
+        } else if (value - min_deposit < 0) {
+          return callback(new Error(this.$t('tips.tips5', { min: toThousands(min_deposit) })));
+        } else if (value - usable > 0) {
+          return callback(new Error(this.$t('tips.tips3') + toThousands(usable) + this.$t('tips.tips4')));
+        } else if (Minus(this.balance, value).toFixed() - DEFAULT_FEE < 0) {
+          return callback(new Error(this.$t('tips.tips6') + toThousands(Minus(this.balance, DEFAULT_FEE).toFixed())));
         } else {
           callback()
         }
       };
 
       return {
+        symbol: NSymbol,
         consensusTotal: 0,//全网TVL
         consensusInfo: {
           lastDayReward: 0,
@@ -216,7 +221,7 @@
         this.$post('/', 'getCoinInfo', [])
           .then((response) => {
             if (response.hasOwnProperty("result")) {
-              this.consensusTotal = divisionAndFix(response.result.consensusTotal, 8, 0);
+              this.consensusTotal = divisionAndFix(response.result.consensusTotal, NDecimals, 0);
             } else {
               this.consensusTotal = 0;
             }
@@ -239,11 +244,12 @@
             if (response.hasOwnProperty("result")) {
               for (let itme of response.result.list) {
                 itme.bozhengjin = itme.deposit;
-                itme.deposit = divisionAndFix(itme.deposit, 8, 3);
-                itme.agentReward = divisionAndFix(itme.agentReward, 8, 3);
-                itme.totalDeposit = divisionAndFix(itme.totalDeposit, 8, 3);
-                itme.remaining = fixNumber(Minus(500000, itme.totalDeposit), 3);
-                itme.totalReward = divisionAndFix(itme.totalReward, 8, 3);
+                itme.deposit = divisionAndFix(itme.deposit, NDecimals, 3);
+                itme.agentReward = divisionAndFix(itme.agentReward, NDecimals, 3);
+                itme.remaining = divisionAndFix(Minus(Max_Deposit, itme.totalDeposit), NDecimals, 3);
+                itme.totalDeposit = divisionAndFix(itme.totalDeposit, NDecimals, 3);
+                // itme.remaining = fixNumber(Minus(500000, itme.totalDeposit), 3);
+                itme.totalReward = divisionAndFix(itme.totalReward, NDecimals, 3);
               }
               this.allNodeData = response.result.list;
               this.nodeInfo = this.allNodeData[0];
@@ -284,7 +290,7 @@
       //最大
       max() {
         if (Number(this.balance)){
-          this.joinForm.stakingValue = Minus(this.balance.toString(), 0.001).toString()
+          this.joinForm.stakingValue = Minus(this.balance, DEFAULT_FEE).toString()
         } else {
           this.joinForm.stakingValue = 0;
         }
@@ -301,10 +307,10 @@
             //console.log(response);
             if (response.hasOwnProperty("result")) {
               // this.consensusInfo.lastDayReward = divisionAndFix(Minus(response.result.totalReward, response.result.lastDayReward), 8, 3);
-              this.consensusInfo.lastDayReward = divisionAndFix(response.result.lastReward, 8, 3);
-              this.consensusInfo.totalReward = divisionAndFix(response.result.totalReward, 8, 3);
-              this.consensusInfo.consensusLock = divisionAndFix(response.result.consensusLock, 8, 3);
-              this.balance = divisionAndFix(response.result.balance, 8, 3);
+              this.consensusInfo.lastDayReward = divisionAndFix(response.result.lastReward, NDecimals, 3);
+              this.consensusInfo.totalReward = divisionAndFix(response.result.totalReward, NDecimals, 3);
+              this.consensusInfo.consensusLock = divisionAndFix(response.result.consensusLock, NDecimals, 3);
+              this.balance = divisionAndFix(response.result.balance, NDecimals, 3);
             }
           })
           .catch((error) => {
@@ -349,8 +355,8 @@
             //console.log(response);
             if (response.hasOwnProperty("result")) {
               for (let itme of response.result.list) {
-                itme.amount = divisionDecimals(itme.amount);
-                itme.fee = divisionDecimals(itme.fee);
+                itme.amount = divisionDecimals(itme.amount, NDecimals);
+                itme.fee = divisionDecimals(itme.fee, NDecimals);
                 itme.createTime = dayjs(getLocalTime(itme.createTime * 1000)).format('YYYY/MM/DD HH:mm:ss');
               }
               this.oldData = [...this.oldData, ...response.result.list];
@@ -376,11 +382,11 @@
               from: this.$store.state.accountInfo.address,
               assetChainId: RUN_DEV ? 1 : 2,
               assetId: 1,
-              depositValue: this.joinForm.stakingValue,
+              depositValue: timesDecimals(this.joinForm.stakingValue, NDecimals),
               agentHash: this.nodeInfo.txHash
             };
             try {
-              const resData = await window.nabox.sendDepositTransaction(data);
+              const resData = await window.NaboxWallet.nai.sendDepositTransaction(data);
               console.log(resData);
               if (resData) {
                 this.$message({
@@ -414,11 +420,11 @@
           from: this.$store.state.accountInfo.address,
           assetChainId: RUN_DEV ? 1 : 2,
           assetId: 1,
-          withdrawAmount: this.outStakingInfo.amount,
+          withdrawAmount: timesDecimals(this.outStakingInfo.amount, NDecimals),
           depositHash: this.outStakingInfo.txHash
         };
         try {
-          const resData = await window.nabox.sendWithDrawTransaction(data);
+          const resData = await window.NaboxWallet.nai.sendWithDrawTransaction(data);
           //console.log(resData);
           if (resData) {
             this.outDialog = false;
@@ -460,6 +466,7 @@
 </script>
 
 <style lang="less">
+@import '../assets//css//style.less';
     .home {
         .all {
             margin: 10px;
@@ -543,9 +550,6 @@
             .staking-value {
                 margin: 10px 0 5px 0;
             }
-            .el-form-item__error {
-                //padding-top: -5px !important;
-            }
             .max {
                 position: absolute;
                 z-index: 99;
@@ -585,15 +589,9 @@
                             font-size: 12px;
                         }
                     }
-                    .tx {
-                        span {
-                            color: #608FFF;
-                        }
-                    }
                 }
                 .fr {
                     span {
-                        color: #608FFF;
                         display: block;
                         margin: 15px 0 0 0;
                     }

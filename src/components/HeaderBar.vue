@@ -24,15 +24,14 @@
 </template>
 
 <script>
-  import {RUN_DEV, EXPLORER_URL} from '@/config'
-  import logoBeta from '@/assets/img/logo-beta.svg'
+  import {EXPLORER_URL} from '@/config'
   import logo from '@/assets/img/logo.svg'
   import {copys, superLong} from '@/api/util'
 
   export default {
     data() {
       return {
-        logoSvg: RUN_DEV ? logo : logoBeta,
+        logoSvg: logo,
         accountInfo: {},//账户信息
         lang: localStorage.getItem('lang') || 'en',
         accountDialog: false
@@ -44,7 +43,7 @@
     },
     mounted() {
       setTimeout(() => {
-        if (typeof window.nabox !== "undefined") {
+        if (window.NaboxWallet && window.NaboxWallet.nai) {
           this.getConnect();
         }
       }, 300)
@@ -74,7 +73,7 @@
       connectTo(walletName) {
         //console.log(walletName);
         if (walletName === 'nabox') {
-          if (typeof window.nabox !== "undefined") {
+          if (window.NaboxWallet && window.NaboxWallet.nai) {
             this.getConnect();
           } else {
             //this.$message({message: this.$t('set.set16'), type: 'error', duration: 3000});
@@ -92,13 +91,11 @@
       async offLink(address) {
         this.accountDialog = false;
         this.$store.commit("changeAccount", {address: ""});
-        // let resData = await window.nabox.offLink({address: address, chain: RUN_DEV ? 'tNULS' : "NULS"});
-        // console.log(resData);
       },
 
       //连接nabox 并获取地址信息
       async getConnect() {
-        let naboxInfo = await window.nabox.createSession();
+        let naboxInfo = await window.NaboxWallet.nai.createSession();
         console.log(naboxInfo);
         if (naboxInfo && naboxInfo.length) {
           if (naboxInfo[0].startsWith('tNULS') || naboxInfo[0].startsWith('NULS')) {
@@ -118,11 +115,11 @@
 
       //监听插件账户变化
       naboxAccount() {
-        if (!window.nabox) {
+        if (!window.NaboxWallet || !window.NaboxWallet.nai) {
           this.$store.commit("changeAccount", {address: ""});
           return
         }
-        window.nabox.on("accountsChanged", (payload) => {
+        window.NaboxWallet.nai.on("accountsChanged", (payload) => {
           //console.log(payload[0]);
           if (payload && payload.length) {
             if (payload[0].startsWith('tNULS') || payload[0].startsWith('NULS')) {
@@ -135,17 +132,6 @@
         });
 
       },
-
-      /*naboxDisconnect() {
-        if (!window.nabox) {
-          this.$store.commit("changeAccount", null);
-          this.accountInfo = {address: ""};
-          return
-        }
-        window.nabox.on("disconnect", (payload) => {
-          console.log(payload[0], "disconnect");
-        });
-      },*/
 
       //显示账户信息
       showAccount() {
@@ -199,7 +185,7 @@
         line-height: 60px;
         border-bottom: 1px solid #f1f1f1;
         .logo {
-            margin: 5px 0 0 5px;
+            margin: 5px 0 0 10px;
             height: 40px;
             img {
                 width: 120px;

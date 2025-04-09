@@ -33,7 +33,7 @@ const en = {
     "tips2": "The staking amount is greater than or equal to 2,000 and less than 500,000",
     "tips3": "You can staking at most ",
     "tips4": " on the node",
-    "tips5": "The minimum amount of staking for a node is 2,000",
+    "tips5": "The minimum amount of staking for a node is {min}",
     "tips6": "The maximum transfer amount is:",
     "tips7": "No wallet founded, please install first",
     "tips8": "Wallet connection is not supported",

@@ -3,6 +3,8 @@ import {BigNumber} from 'bignumber.js'
 import {API_CHAIN_ID, API_PREFIX} from '@/config'
 import copy from 'copy-to-clipboard'
 
+export const isBeta = API_CHAIN_ID === 2 ? true : false
+
 /**
  * 10的N 次方
  * @param arg
