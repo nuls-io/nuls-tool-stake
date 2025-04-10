@@ -86,23 +86,6 @@ export function timesDecimals(nu, decimals = 8) {
  */
 export const copys = (value) => copy(value);
 
-/**
- * @disc: 验证密码
- * @params:  accountInfo
- * @params:  password
- * @date: 2019-08-22 12:05
- * @author: Wave
- */
-export function passwordVerification(accountInfo, password) {
-  let aesPri = accountInfo.aesPri ? accountInfo.aesPri : accountInfo.encryptedPrivateKey;
-  const pri = nuls.decrypteOfAES(aesPri, password);
-  const newAddressInfo = nuls.importByKey(API_CHAIN_ID, pri, password, API_PREFIX);
-  if (newAddressInfo.address === accountInfo.address) {
-    return {success: true, pri: pri, pub: accountInfo.pub, address: accountInfo.address, aesPri: newAddressInfo.aesPri};
-  } else {
-    return {success: false};
-  }
-}
 
 /**
  * 获取链ID

@@ -65,7 +65,9 @@
                     </el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" class="pledge" @click="submitStaking('joinForm')">{{$t('home.home13')}}
+                    <el-button v-if="$store.state.address" type="primary" class="pledge" @click="submitStaking('joinForm')">{{$t('home.home13')}}
+                    </el-button>
+                    <el-button v-else type="primary" class="pledge" @click="connectWallet">{{$t('header.header0')}}
                     </el-button>
                 </el-form-item>
             </el-form>
@@ -75,13 +77,13 @@
         <div class="pledgeing" v-show="nodeDepositData.length !==0">
             <h5>{{$t('home.home14')}}</h5>
             <div class="lis" v-for="(item,index) in nodeDepositData" :key="index">
-                <div class="fl">
-                    <div class="top">{{$toThousands(item.amount)}} {{ symbol }} <span>{{item.createTime}}</span></div>
-                    <div class="tx">TXID: <span @click="toUrl(item.txHash,'url')" class="click">{{superLongs(item.txHash,10)}}</span>
-                    </div>
+                <div class="left">
+                  <div style="color: #000">{{$toThousands(item.amount)}} {{ symbol }}</div>
+                  <div class="tx">TXID: <span @click="toUrl(item.txHash,'url')" class="click">{{superLongs(item.txHash,10)}}</span></div>
                 </div>
-                <div class="fr">
-                    <span class="click" @click="outStaking(item)">{{$t('home.home15')}}</span>
+                <div class="right">
+                  <div class="time">{{item.createTime}}</div>
+                  <span class="click" @click="outStaking(item)">{{$t('home.home15')}}</span>
                 </div>
             </div>
             <div class="cb"></div>
@@ -111,11 +113,13 @@
     toThousands
   } from '@/api/util'
   import { NSymbol, NDecimals, Max_Deposit, Min_Deposit, DEFAULT_FEE } from '@/constants/constants'
-import { timesDecimals } from '../api/util'
+  import { timesDecimals } from '../api/util'
+  import providerMixin from '../mixins/providerMixin'
 
   const min_deposit = divisionDecimals(Min_Deposit, NDecimals)
   const max_deposit = divisionDecimals(Max_Deposit, NDecimals)
   export default {
+    mixins: [providerMixin],
     data() {
 
       let checkStakingValue = (rule, value, callback) => {
@@ -137,6 +141,8 @@ import { timesDecimals } from '../api/util'
         }
       };
 
+      this.timer1 = null
+      this.timer2 = null
       return {
         symbol: NSymbol,
         consensusTotal: 0,//全网TVL
@@ -171,29 +177,47 @@ import { timesDecimals } from '../api/util'
 
       };
     },
-    created() {
-      this.init()
-    },
+
     mounted() {
-
-      setInterval(() => {
-        if (this.$store.state.accountInfo.address) {
-          this.getAddressInfoByNode(this.$store.state.accountInfo);
-          this.getConsensusInfoByAddress(1, 500, this.$store.state.accountInfo.address);
-        }
-      }, 11000)
-
+      this.init()
+      this.timer1 = setInterval(() => {
+        this.init()
+      }, 10000)
     },
+
+    beforeDestroy() {
+      if (this.timer1) {
+        clearInterval(this.timer1);
+      }
+      if (this.timer2) {
+        clearInterval(this.timer2);
+      }
+    },
+    
     watch: {
-      '$store.state.accountInfo': {
-        immediate: false, // immediate选项可以开启首次赋值监听
-        handler(newVal, oldVal) {
-          console.log(newVal, oldVal);
-          if (newVal) {
-            this.nodeDepositData = [];
-            this.oldData = [];
-            this.getAddressInfoByNode(newVal);
-            this.getConsensusInfoByAddress(1, 500, newVal.address);
+      '$store.state.address': {
+        immediate: true, // immediate选项可以开启首次赋值监听
+        handler(val) {
+          this.nodeDepositData = [];
+          this.oldData = [];
+          clearInterval(this.timer2);
+          if (val) {
+            this.getAddressInfoByNode(val);
+            this.getConsensusInfoByAddress(1, 500, val);
+            this.timer2 = setInterval(() => {
+              this.getAddressInfoByNode(val);
+              this.getConsensusInfoByAddress(1, 500, val);
+            }, 11000)
+          } else {
+            this.balance = '0'
+            this.consensusInfo = {
+              lastDayReward: 0,
+              totalReward: 0,
+              consensusLock: 0
+            }
+            if (this.$refs.joinForm) {
+              this.$refs.joinForm.resetFields()
+            }
           }
         }
       },
@@ -204,10 +228,6 @@ import { timesDecimals } from '../api/util'
         this.getCoinInfo();
         this.getConsensusNodes();
         this.getAnnulizedRewardStatistical()
-        // if (this.$store.state.accountInfo.address) {
-        //   this.getAddressInfoByNode(this.$store.state.accountInfo);
-        //   this.getConsensusInfoByAddress(1, 500, this.$store.state.accountInfo.address);
-        // }
       },
 
       superLongs(string, leng) {
@@ -252,7 +272,11 @@ import { timesDecimals } from '../api/util'
                 itme.totalReward = divisionAndFix(itme.totalReward, NDecimals, 3);
               }
               this.allNodeData = response.result.list;
-              this.nodeInfo = this.allNodeData[0];
+              if (this.nodeInfo.agentId) {
+                this.nodeInfo = this.allNodeData.find(item => item.agentId === this.nodeInfo.agentId);
+              } else {
+                this.nodeInfo = this.allNodeData[0];
+              }
               this.searchValue = this.nodeInfo.agentAlias ? this.nodeInfo.agentAlias : this.nodeInfo.agentId;
               //console.log(this.nodeInfo);
             }
@@ -301,8 +325,8 @@ import { timesDecimals } from '../api/util'
        * 获取地址网络信息
        * @param addressInfos
        **/
-      async getAddressInfoByNode(addressInfos) {
-        await this.$post('/', 'getAccount', [addressInfos.address])
+      async getAddressInfoByNode(address) {
+        await this.$post('/', 'getAccount', [address])
           .then((response) => {
             //console.log(response);
             if (response.hasOwnProperty("result")) {
@@ -330,15 +354,44 @@ import { timesDecimals } from '../api/util'
             //console.log(response);
             if (response.hasOwnProperty("result")) {
               //this.nodeDepositData = [];
+              const agentHashs = []
               for (let item of response.result.list) {
                 //console.log(item.txHash);
-                this.getNodeDepositByHash(address, item.txHash)
+                agentHashs.push(item.txHash)
               }
+              // console.log(response.result.list, '22');
               this.myNodeData = response.result.list
+              if (agentHashs.length) {
+                this.getNodesDeposit(agentHashs)
+              }
             }
           })
           .catch((error) => {
             console.log("getAccountConsensus:" + error);
+          });
+      },
+
+      async getNodesDeposit(hashs) {
+        const promises = hashs.map((hash) => {
+          return this.$post('/', 'getAccountDeposit', [1, 50, this.$store.state.address, hash])
+        });
+        Promise.all(promises)
+          .then((responses) => {
+            const depositData = []
+            responses.map(response => {
+              if (response.result) {
+                for (let item of response.result.list) {
+                  item.amount = divisionDecimals(item.amount, NDecimals);
+                  item.fee = divisionDecimals(item.fee, NDecimals);
+                  item.createTime = dayjs(getLocalTime(item.createTime * 1000)).format('YYYY/MM/DD HH:mm:ss');
+                  depositData.push(item)
+                }
+              }
+            })
+            this.nodeDepositData = depositData
+          })
+          .catch((error) => {
+            console.log("getAccountDeposit:" + error);
           });
       },
 
@@ -359,12 +412,13 @@ import { timesDecimals } from '../api/util'
                 itme.fee = divisionDecimals(itme.fee, NDecimals);
                 itme.createTime = dayjs(getLocalTime(itme.createTime * 1000)).format('YYYY/MM/DD HH:mm:ss');
               }
+              console.log(response.result.list, 234234);
               this.oldData = [...this.oldData, ...response.result.list];
               this.oldData = arrDistinctByProp(this.oldData, "txHash");
               //console.log(newList);
-              if (this.oldData.length !== this.nodeDepositData.length || this.nodeDepositData.length === 0) {
-                this.nodeDepositData = this.oldData
-              }
+              this.nodeDepositData = this.oldData
+              // if (this.oldData.length !== this.nodeDepositData.length || this.nodeDepositData.length === 0) {
+              // }
             }
           })
           .catch((error) => {
@@ -379,7 +433,7 @@ import { timesDecimals } from '../api/util'
         this.$refs[formName].validate(async (valid) => {
           if (valid) {
             const data = {
-              from: this.$store.state.accountInfo.address,
+              from: this.$store.state.address,
               assetChainId: RUN_DEV ? 1 : 2,
               assetId: 1,
               depositValue: timesDecimals(this.joinForm.stakingValue, NDecimals),
@@ -417,7 +471,7 @@ import { timesDecimals } from '../api/util'
 
       async out() {
         const data = {
-          from: this.$store.state.accountInfo.address,
+          from: this.$store.state.address,
           assetChainId: RUN_DEV ? 1 : 2,
           assetId: 1,
           withdrawAmount: timesDecimals(this.outStakingInfo.amount, NDecimals),
@@ -578,23 +632,18 @@ import { timesDecimals } from '../api/util'
                 font-size: 14px;
                 border-bottom: 1px solid #8c939d;
                 line-height: 25px;
-                .fl {
-                    .top {
-                        color: #000000;
-                        span {
-                            color: #5e6983;
-                            display: block;
-                            float: right;
-                            margin: 0 0 0 80px;
-                            font-size: 12px;
-                        }
-                    }
+                display: flex;
+                justify-content: space-between;
+                .left {
+                  flex: 1;
+                  margin-right: 10px;
                 }
-                .fr {
-                    span {
-                        display: block;
-                        margin: 15px 0 0 0;
-                    }
+                .right {
+                  text-align: right;
+                  .time {
+                    color: #5e6983;
+                    font-size: 12px;
+                  }
                 }
             }
         }

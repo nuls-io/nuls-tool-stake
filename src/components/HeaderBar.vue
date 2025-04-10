@@ -5,19 +5,19 @@
         </div>
         <div class="account fr">
             <div class="fl">
-                <div v-if="$store.state.accountInfo.address" class="clicks address" @click="accountDialog=true">
-                    {{superLongs($store.state.accountInfo.address,5)}}
+                <div v-if="$store.state.address" class="clicks address" @click="accountDialog=true">
+                    {{superLongs($store.state.address,5)}}
                 </div>
-                <div v-else class="click" @click="connectTo('nabox')">{{$t('header.header0')}}</div>
+                <div v-else class="click" @click="connectWallet">{{$t('header.header0')}}</div>
             </div>
             <div class="fr clicks language" @click="selectLanguage">{{lang !=='en' ? 'En':'Zh'}}</div>
         </div>
         <el-dialog title="" :visible.sync="accountDialog" width="350px" class="account-dialog">
-            <div class="address">{{$store.state.accountInfo.address}}</div>
+            <div class="address">{{$store.state.address}}</div>
             <div class="btns">
-                <el-button @click="toUrl($store.state.accountInfo.address,'url')">{{$t('header.header1')}}</el-button>
-                <el-button @click="copy($store.state.accountInfo.address)">{{$t('header.header2')}}</el-button>
-                <el-button @click="offLink($store.state.accountInfo.address)">{{$t('header.header3')}}</el-button>
+                <el-button @click="toUrl($store.state.address,'url')">{{$t('header.header1')}}</el-button>
+                <el-button @click="copy($store.state.address)">{{$t('header.header2')}}</el-button>
+                <el-button @click="offLink">{{$t('header.header3')}}</el-button>
             </div>
         </el-dialog>
     </div>
@@ -27,34 +27,24 @@
   import {EXPLORER_URL} from '@/config'
   import logo from '@/assets/img/logo.svg'
   import {copys, superLong} from '@/api/util'
+  import providerMixin from '../mixins/providerMixin'
 
   export default {
+    mixins: [providerMixin],
     data() {
       return {
         logoSvg: logo,
-        accountInfo: {},//账户信息
         lang: localStorage.getItem('lang') || 'en',
         accountDialog: false
       };
     },
     components: {},
-    created() {
-      // this.selectLanguage();
-    },
-    mounted() {
-      setTimeout(() => {
-        if (window.NaboxWallet && window.NaboxWallet.nai) {
-          this.getConnect();
-        }
-      }, 300)
-    },
-    methods: {
 
-      //连接钱包
-      onLink() {
-        this.$store.commit("toggleConnect", true)
-        // this.connectDialog = true;
-      },
+    mounted() {
+      this.initAccount()
+    },
+
+    methods: {
 
       superLongs(string, leng) {
         return superLong(string, leng)
@@ -64,73 +54,10 @@
         await this.$store.dispatch('changeBalance')
       },
 
-      /**
-       * @disc: 连接到插件
-       * @params: wallet name
-       * @date: 2021-03-10 13:52
-       * @author: Wave
-       */
-      connectTo(walletName) {
-        //console.log(walletName);
-        if (walletName === 'nabox') {
-          if (window.NaboxWallet && window.NaboxWallet.nai) {
-            this.getConnect();
-          } else {
-            //this.$message({message: this.$t('set.set16'), type: 'error', duration: 3000});
-            this.$message({message: this.$t('tips.tips7'), type: 'error', duration: 3000});
-            setTimeout(() => {
-              window.open("https://chrome.google.com/webstore/detail/nabox-wallet/nknhiehlklippafakaeklbeglecifhad?hl=zh-CN&authuser=2")
-            }, 1000)
-          }
-        } else {
-          this.$message({message: this.$t('tips.tips8'), type: 'error', duration: 3000});
-        }
-      },
-
       //断开连接钱包
-      async offLink(address) {
+      async offLink() {
         this.accountDialog = false;
-        this.$store.commit("changeAccount", {address: ""});
-      },
-
-      //连接nabox 并获取地址信息
-      async getConnect() {
-        let naboxInfo = await window.NaboxWallet.nai.createSession();
-        console.log(naboxInfo);
-        if (naboxInfo && naboxInfo.length) {
-          if (naboxInfo[0].startsWith('tNULS') || naboxInfo[0].startsWith('NULS')) {
-            this.$store.commit("changeAccount", {address: naboxInfo[0]});
-            this.naboxAccount();
-          } else {
-            if (naboxInfo[0]) {
-              this.offLink(naboxInfo[0])
-            }
-            console.log("请切换nabox的网络到nuls ");
-          }
-        } else {
-          //this.$message({message: this.$t('set.set19'), type: 'error', duration: 3000});
-          this.$message({message: this.$t('tips.tips9'), type: 'error', duration: 3000});
-        }
-      },
-
-      //监听插件账户变化
-      naboxAccount() {
-        if (!window.NaboxWallet || !window.NaboxWallet.nai) {
-          this.$store.commit("changeAccount", {address: ""});
-          return
-        }
-        window.NaboxWallet.nai.on("accountsChanged", (payload) => {
-          //console.log(payload[0]);
-          if (payload && payload.length) {
-            if (payload[0].startsWith('tNULS') || payload[0].startsWith('NULS')) {
-              this.$store.commit("changeAccount", {address: payload[0]});
-              //this.accountInfo.address = payload[0];
-            }
-          } else {
-            this.$store.commit("changeAccount", {address: ""});
-          }
-        });
-
+        this.disconnect()
       },
 
       //显示账户信息
@@ -154,7 +81,6 @@
       selectLanguage() {
         this.lang = this.lang === 'en' ? 'cn' : 'en';
         localStorage.setItem('lang', this.lang);
-        console.log(this.lang, 366)
         this.$i18n.locale = this.lang;
       },
 

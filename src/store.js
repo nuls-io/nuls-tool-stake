@@ -6,13 +6,16 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   state: {
     lang: 'cn',
-    accountInfo: {},
+    address: '',
+    isWrongChain: false
   },
   mutations: {
-    changeAccount(state, accountInfo) {
-      accountInfo = accountInfo || {address: ""};
-      state.accountInfo = accountInfo;
+    changeAddress(state, address) {
+      state.address = address;
     },
+    changeIsWrongChain(state, isWrongChain) {
+      state.isWrongChain = isWrongChain;
+    }
   },
   actions: {}
 })
