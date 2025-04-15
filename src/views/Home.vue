@@ -77,14 +77,22 @@
         <div class="pledgeing" v-show="nodeDepositData.length !==0">
             <h5>{{$t('home.home14')}}</h5>
             <div class="lis" v-for="(item,index) in nodeDepositData" :key="index">
-                <div class="left">
+              <div class="flex-between">
+                <div style="color: #000">{{$toThousands(item.amount)}} {{ symbol }}</div>
+                <div class="time">{{item.createTime}}</div>
+              </div>
+              <div class="flex-between">
+                <div class="tx">TXID: <span @click="toUrl(item.txHash,'url')" class="click">{{superLongs(item.txHash,10)}}</span></div>
+                <span class="click" @click="outStaking(item)">{{$t('home.home15')}}</span>
+              </div>
+                <!-- <div class="left">
                   <div style="color: #000">{{$toThousands(item.amount)}} {{ symbol }}</div>
                   <div class="tx">TXID: <span @click="toUrl(item.txHash,'url')" class="click">{{superLongs(item.txHash,10)}}</span></div>
                 </div>
                 <div class="right">
                   <div class="time">{{item.createTime}}</div>
                   <span class="click" @click="outStaking(item)">{{$t('home.home15')}}</span>
-                </div>
+                </div> -->
             </div>
             <div class="cb"></div>
         </div>
@@ -632,8 +640,12 @@
                 font-size: 14px;
                 border-bottom: 1px solid #8c939d;
                 line-height: 25px;
-                display: flex;
-                justify-content: space-between;
+                // display: flex;
+                // justify-content: space-between;
+                .time {
+                  color: #5e6983;
+                  font-size: 12px;
+                }
                 .left {
                   flex: 1;
                   margin-right: 10px;
