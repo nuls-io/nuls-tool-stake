@@ -5,7 +5,7 @@ export const NDecimals = 4
 export const NULSDecimals = 8
 export const NDiffDeciamsl = NULSDecimals - NDecimals
 export const FEE_PERKB = '100000'
-export const Max_Deposit = '50000000000000'
+export const Max_Deposit = '200000000000000'
 export const Min_Deposit = '200000000000'
 
 export const DEFAULT_FEE = divisionDecimals(FEE_PERKB, NDecimals)

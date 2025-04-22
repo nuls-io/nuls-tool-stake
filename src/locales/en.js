@@ -30,7 +30,7 @@ const en = {
   "tips": {
     "tips0": "The staking amount cannot be empty",
     "tips1": "Please enter a valid staking value",
-    "tips2": "The staking amount is greater than or equal to 2,000 and less than 500,000",
+    "tips2": "The staking amount is greater than or equal to 2,000 and less than 2,000,000",
     "tips3": "You can staking at most ",
     "tips4": " on the node",
     "tips5": "The minimum amount of staking for a node is {min}",
